@@ -16,8 +16,8 @@ const tu = t.used(Groups);
 const a = t.automateMultiple(Groups);
 const au = a.used(Groups);
 
-console.log(tu, t.getIssues(Groups), t.data.groups);
-console.log(au, a.getIssues(Groups), a.data.groups);
+console.log(tu, t.hasIssues(Groups), t.data.groups);
+console.log(au, a.hasIssues(Groups), a.data.groups);
 
 (window as any).groups = Groups;
 (window as any).timetable = t;

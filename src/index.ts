@@ -6,4 +6,4 @@ export {
     ITimetable
 }
 
-// require('./test')
+require('./test')

@@ -96,5 +96,5 @@ export declare class TimetableManager {
     assignedToSameInSection(groups: IGroup[]): any;
     used(groups: IGroup[]): string;
     nully(): string;
-    hasIssues(groups: IGroup[]): number;
+    hasIssues(groups: IGroup[]): boolean;
 }

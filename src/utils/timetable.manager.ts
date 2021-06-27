@@ -555,6 +555,6 @@ export class TimetableManager {
 
     hasIssues(groups: IGroup[]) {
         const issues = this.getIssues(groups);
-        return issues.conflicts.length || issues.invalid.length || issues.missing.length;
+        return !!(issues.conflicts.length || issues.invalid.length || issues.missing.length);
     }
 }
