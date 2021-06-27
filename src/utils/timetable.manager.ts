@@ -2,25 +2,16 @@ import { IGroup } from "../models/group.interface";
 import { TimetableConflict } from "../models/timetable.conflict";
 import { TimetableGroup } from "../models/timetable.group";
 import { ITimetable } from "../models/timetable.interface";
-import { TimetablePeriod } from "../models/timetable.period";
 import { TimetableSlot } from "../models/timetable.slot";
 
-export class Timetable implements ITimetable {
-
-    get data() {
-        return this.clone();
-    }
+export class TimetableManager {
 
     constructor(
-        public days: string[],
-        public periods: TimetablePeriod[],
-        public breakPeriods: number[],
-        public groups: TimetableGroup[],
-        public type: 'single' | 'multiple'
+        public data: ITimetable
     ) { }
 
     getSlots() {
-        return this.groups.map(g => g.slots);
+        return this.data.groups.map(g => g.slots);
     }
 
     getMissingItems(groups: IGroup[]) {
@@ -44,7 +35,7 @@ export class Timetable implements ITimetable {
     }
 
     getGroup(_id: string) {
-        const group = this.groups.find(c => c._id.toString() == _id.toString());
+        const group = this.data.groups.find(c => c._id.toString() == _id.toString());
         return group;
     }
 
@@ -163,7 +154,7 @@ export class Timetable implements ITimetable {
     getItemSlots(item: string) {
         const slots: TimetableSlot[] = [];
 
-        for (let group of this.groups) {
+        for (let group of this.data.groups) {
             const s = this.getGroupSlots(group._id);
 
             for (let day in s) {
@@ -329,7 +320,7 @@ export class Timetable implements ITimetable {
     }
 
     clone() {
-        const data: ITimetable = { days: this.days, periods: this.periods, groups: this.groups, breakPeriods: this.breakPeriods, type: this.type };
+        const data: ITimetable = { days: this.data.days, periods: this.data.periods, groups: this.data.groups, breakPeriods: this.data.breakPeriods, type: this.data.type };
         const timeTable = JSON.parse(JSON.stringify(data)) as ITimetable;
         return timeTable;
     }
@@ -340,7 +331,7 @@ export class Timetable implements ITimetable {
 
         if (!group) throw new Error('Group not found');
 
-        const timetable = new Timetable(data.days, data.periods, data.breakPeriods, data.groups, data.type);
+        const timetable = new TimetableManager(data);
 
         if (timetable.getGroupInvalidItems(_id, group.items.map(i => i._id)))
             throw new Error("This item should not be assigned to this group");
@@ -348,7 +339,7 @@ export class Timetable implements ITimetable {
         const slots = timetable.getGroupSlots(_id);
         slots[day][period] = item;
 
-        timetable.groups = timetable.groups.map(g => {
+        timetable.data.groups = timetable.data.groups.map(g => {
             if (g._id == _id) g.slots = slots;
             return g;
         });
@@ -364,19 +355,19 @@ export class Timetable implements ITimetable {
 
     automate(groups: IGroup[], random = true) {
         const data = this.clone();
-        const timetable = new Timetable(data.days, data.periods, data.breakPeriods, data.groups, 'single');
+        const timetable = new TimetableManager(data);
 
-        timetable.groups = [];
+        timetable.data.groups = [];
         for (let group of groups) {
             const itemsAsList = group.items.map(i => i._id);
             const used: string[] = [];
 
             const g: TimetableGroup = { _id: group._id, slots: [] };
 
-            for (let d in timetable.days) {
+            for (let d in timetable.data.days) {
                 g.slots[d] = [];
 
-                for (let p in timetable.periods) {
+                for (let p in timetable.data.periods) {
                     if (used.length == itemsAsList.length) break;
                     if (!random) {
                         const item = itemsAsList.pop();
@@ -401,7 +392,7 @@ export class Timetable implements ITimetable {
                     }
                 }
             }
-            timetable.groups.push(g);
+            timetable.data.groups.push(g);
         }
 
         return timetable;
@@ -409,10 +400,10 @@ export class Timetable implements ITimetable {
 
     automateMultiple(groups: IGroup[]) {
         const data = this.clone();
-        const timetable = new Timetable(data.days, data.periods, data.breakPeriods, data.groups, 'multiple');
+        const timetable = new TimetableManager(data);
 
         //truncate groups
-        timetable.groups = [];
+        timetable.data.groups = [];
 
         for (let i = 0; i < groups.length; i++) {
             const group = groups[i];
@@ -421,7 +412,7 @@ export class Timetable implements ITimetable {
             const itemsAsList = group.items.map(i => i._id);
 
             // get a set of all assigned in group
-            const groupAssignees =  [
+            const groupAssignees = [
                 ...new Set(group.items.map(it => it.assignee))
             ];
 
@@ -433,13 +424,13 @@ export class Timetable implements ITimetable {
             // store checked items to know when all items have been checked
             let checkedItems: string[] = [];
 
-            for (let d in timetable.days) {
+            for (let d in timetable.data.days) {
                 newGroup.slots[d] = [];
 
                 // store checked assignees to know when all assignees have been checked and escape infinite loop
                 const checkAssignees: string[] = [];
 
-                for (let p in timetable.periods) {
+                for (let p in timetable.data.periods) {
 
                     // get all assigned to this particular slot
                     const assignees = timetable.getSlotAssignees(d, p, groups);
@@ -490,7 +481,7 @@ export class Timetable implements ITimetable {
                     }
                 }
             }
-            timetable.groups.push(newGroup);
+            timetable.data.groups.push(newGroup);
         }
         return timetable;
     }
@@ -533,5 +524,32 @@ export class Timetable implements ITimetable {
         }
 
         return assigned;
+    }
+
+    used(timeTable: TimetableManager, groups: IGroup[]) {    
+        const len = groups.reduce((acc, reducer) => {
+            return acc + reducer.items.length;
+        }, 1);
+    
+        const missing = timeTable.getMissingItems(groups);
+        const used = len - missing.reduce((acc, reducer) => {
+            return acc + reducer.missing.length;
+        }, 1)
+    
+        return (used / len) * 100 + '%';
+    }
+
+    nully(timeTable: ITimetable) {
+        const len = timeTable.groups.length * timeTable.days.length * timeTable.periods.length;
+    
+        const used = timeTable.groups.reduce((acc, red) => {
+            return acc + red.slots.reduce((accc, redd) => {
+                return accc + redd.reduce((acccc, reddd) => {
+                    return acccc += reddd ? 1 : 0;
+                }, 0)
+            }, 0)
+        }, 0);
+    
+        return (used / len) * 100 + '%';
     }
 }

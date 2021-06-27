@@ -1,8 +1,8 @@
 {
-  "name": "any-timetable",
+  "name": "timetable-manager",
   "version": "1.0.0",
   "description": "",
-  "main": "index.js",
+  "main": "lib/index.js",
   "scripts": {
     "start": "npm run build && npm-run-all --parallel watch serve",
     "test": "echo \"Error: no test specified\" && exit 1",
