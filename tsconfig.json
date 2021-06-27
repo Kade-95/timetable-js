@@ -1,14 +1,36 @@
 {
-    // "compileOnSave": true
+    "compileOnSave": true,
     "compilerOptions": {
-        "outDir": "./dist",
+        "outDir": "lib",
+        "target": "es5",
+        "module": "esnext",
+        "lib": [
+            "DOM"
+        ],
         "sourceMap": true,
+        "strict": true,
+        "strictFunctionTypes": true,
+        "noImplicitReturns": true,
+        "noImplicitThis": true,
         "noImplicitAny": true,
-        "module": "es6",
-        "target": "ES5",
+        "strictNullChecks": true,
+        "alwaysStrict": true,
+        "noUnusedLocals": true,
+        "noUnusedParameters": true,
+        "skipLibCheck": true,
+        "declaration": true,
+        "esModuleInterop": true,
         "allowJs": true,
         "moduleResolution": "node",
         "downlevelIteration": true,
         "resolveJsonModule": true
     },
+    "include": [
+        "src"
+    ],
+    "exclude": [
+        "node_modules",
+        "lib",
+        "**/*.test.ts"
+    ]
 }

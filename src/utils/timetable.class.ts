@@ -49,7 +49,7 @@ export class Timetable implements ITimetable {
     }
 
     getGroupSlots(_id: string) {
-        return this.getGroup(_id)?.slots;
+        return this.getGroup(_id)?.slots || [];
     }
 
     getGroupAssignees(group: IGroup) {
@@ -92,14 +92,14 @@ export class Timetable implements ITimetable {
         const invalid: string[] = [];
 
         for (let i of slotsAsList) {
-            if (!items.includes(i) && i) invalid.push(i);
+            if (i && !items.includes(i)) invalid.push(i);
         }
 
         return invalid;
     }
 
     getSlotItems(day: string, period: string) {
-        const items: string[] = [];
+        const items: (string | null)[] = [];
 
         for (let slots of this.getSlots()) {
             for (let d in slots) {
@@ -125,7 +125,7 @@ export class Timetable implements ITimetable {
     }
 
     getSlotAssignees(day: string, period: string, groups: IGroup[]) {
-        const assignees: { _id: string, assignee: string, section: string, item: string }[] = [];
+        const assignees: { _id: string, assignee: string | null, section: string, item: string | null }[] = [];
 
         for (let g of groups) {
             const slots = this.getGroupSlots(g._id);
@@ -338,6 +338,8 @@ export class Timetable implements ITimetable {
         const data = this.clone();
         const group = groups.find(g => g._id == _id);
 
+        if (!group) throw new Error('Group not found');
+
         const timetable = new Timetable(data.days, data.periods, data.breakPeriods, data.groups, data.type);
 
         if (timetable.getGroupInvalidItems(_id, group.items.map(i => i._id)))
@@ -352,10 +354,9 @@ export class Timetable implements ITimetable {
         });
 
         const conflicts = timetable.getGroupConflict(_id, groups);
-        const assignee = group.items.find(i => i._id).assignee;
+        const assignee = group.items.find(i => i._id)?.assignee;
 
-        const theConflict = conflicts.find(c => c.assignee == assignee);
-
+        const theConflict = conflicts?.find(c => c.assignee == assignee);
         if (theConflict) throw new Error("This item created a conflict in this group");
 
         return timetable;
@@ -377,10 +378,13 @@ export class Timetable implements ITimetable {
 
                 for (let p in timetable.periods) {
                     if (used.length == itemsAsList.length) break;
-
                     if (!random) {
-                        g.slots[d][p] = itemsAsList.pop();
-                        used.push(g.slots[d][p]);
+                        const item = itemsAsList.pop();
+
+                        if (item) {
+                            g.slots[d][p] = item;
+                            used.push(item);
+                        }
                     }
                     else {
 
@@ -403,7 +407,7 @@ export class Timetable implements ITimetable {
         return timetable;
     }
 
-    automateMultiple(groups: IGroup[], heirachy: { item: string, level: number }[] = []) {
+    automateMultiple(groups: IGroup[]) {
         const data = this.clone();
         const timetable = new Timetable(data.days, data.periods, data.breakPeriods, data.groups, 'multiple');
 
@@ -417,7 +421,10 @@ export class Timetable implements ITimetable {
             const itemsAsList = group.items.map(i => i._id);
 
             // get a set of all assigned in group
-            const groupAssignees = [...new Set(group.items.reduce((acc, red) => { return [...acc, red.assignee] }, []))];
+            const groupAssignees =  [
+                ...new Set(group.items.map(it => it.assignee))
+            ];
+
             const newGroup: TimetableGroup = { _id: group._id, slots: [] };
 
             // used to store assigned items
@@ -454,7 +461,7 @@ export class Timetable implements ITimetable {
                         let n = Math.floor(Math.random() * itemsAsList.length);
 
                         item = itemsAsList[n];
-                        assignee = group.items.find(i => i._id == item)?.assignee;
+                        assignee = group.items.find(i => i._id == item)?.assignee as string;
 
                         if (!checkedItems.includes(item)) checkedItems.push(item);
 
@@ -491,7 +498,9 @@ export class Timetable implements ITimetable {
     canAssignToSlot(item: string, groupId: string, day: string, period: string, groups: IGroup[]) {
         const assignees = this.getSlotAssignees(day, period, groups);
         const group = groups.find(g => g._id == groupId);
-        const assignee = group?.items.find(i => i._id == item).assignee;
+        if (!group) throw new Error('Group not found');
+
+        const assignee = group.items.find(i => i._id == item)?.assignee;
 
         const assigned = assignees.find(a => a.assignee == assignee);
         return !(assigned && assigned.section != group.section);
