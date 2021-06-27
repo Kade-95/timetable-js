@@ -1,4 +1,4 @@
 export interface TimetableGroup {
     _id: string;
-    slots: string[][];
+    slots: (string | null)[][];
 }

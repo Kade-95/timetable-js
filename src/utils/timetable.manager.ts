@@ -21,7 +21,7 @@ export class TimetableManager {
             allMissing.push({ _id: group._id, missing: this.getGroupMissingItems(group._id, items) });
         }
 
-        return allMissing;
+        return allMissing.filter(alm => alm.missing.length);
     }
 
     getInvalidItems(groups: IGroup[]) {
@@ -31,7 +31,7 @@ export class TimetableManager {
             allInvalid.push({ _id: group._id, invalid: this.getGroupInvalidItems(group._id, items) });
         }
 
-        return allInvalid;
+        return allInvalid.filter(alm => alm.invalid.length);
     }
 
     getGroup(_id: string) {
@@ -269,7 +269,7 @@ export class TimetableManager {
             conflicts.push({ _id: group._id, conflicts: groupConflicts });
         }
 
-        return conflicts;
+        return conflicts.filter(alc => alc.conflicts.length);
     }
 
     getGroupConflict(_id: string, groups: IGroup[]) {
@@ -526,30 +526,35 @@ export class TimetableManager {
         return assigned;
     }
 
-    used(timeTable: TimetableManager, groups: IGroup[]) {    
+    used(groups: IGroup[]) {
         const len = groups.reduce((acc, reducer) => {
             return acc + reducer.items.length;
         }, 1);
-    
-        const missing = timeTable.getMissingItems(groups);
+
+        const missing = this.getMissingItems(groups);
         const used = len - missing.reduce((acc, reducer) => {
             return acc + reducer.missing.length;
         }, 1)
-    
+
         return (used / len) * 100 + '%';
     }
 
-    nully(timeTable: ITimetable) {
-        const len = timeTable.groups.length * timeTable.days.length * timeTable.periods.length;
-    
-        const used = timeTable.groups.reduce((acc, red) => {
+    nully() {
+        const len = this.data.groups.length * this.data.days.length * this.data.periods.length;
+
+        const used = this.data.groups.reduce((acc, red) => {
             return acc + red.slots.reduce((accc, redd) => {
                 return accc + redd.reduce((acccc, reddd) => {
                     return acccc += reddd ? 1 : 0;
                 }, 0)
             }, 0)
         }, 0);
-    
+
         return (used / len) * 100 + '%';
+    }
+
+    hasIssues(groups: IGroup[]) {
+        const issues = this.getIssues(groups);
+        return issues.conflicts.length || issues.invalid.length || issues.missing.length;
     }
 }

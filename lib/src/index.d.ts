@@ -1,3 +1,3 @@
 import { ITimetable } from "./models/timetable.interface";
-import { Timetable } from "./utils/timetable.class";
-export { Timetable, ITimetable };
+import { TimetableManager } from "./utils/timetable.manager";
+export { TimetableManager, ITimetable };
