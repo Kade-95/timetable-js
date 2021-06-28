@@ -55,7 +55,7 @@ export class TimetableManager {
             }
         }
 
-        return [...new Set(assignees)];
+        return Array.from(new Set(assignees));
     }
 
     getGroupSlotsAsList(_id: string) {
@@ -100,7 +100,7 @@ export class TimetableManager {
             }
         }
 
-        return [...new Set(items)];
+        return Array.from(new Set(items));
     }
 
     getGroupSlotItem(_id: string, day: string, period: string) {
@@ -412,9 +412,7 @@ export class TimetableManager {
             const itemsAsList = group.items.map(i => i._id);
 
             // get a set of all assigned in group
-            const groupAssignees = [
-                ...new Set(group.items.map(it => it.assignee))
-            ];
+            const groupAssignees = Array.from(new Set(group.items.map(it => it.assignee)));
 
             const newGroup: TimetableGroup = { _id: group._id, slots: [] };
 

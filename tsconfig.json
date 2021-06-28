@@ -19,11 +19,7 @@
         "noUnusedParameters": true,
         "skipLibCheck": true,
         "declaration": true,
-        "esModuleInterop": true,
-        "allowJs": true,
-        "moduleResolution": "node",
-        "downlevelIteration": true,
-        "resolveJsonModule": true
+        "esModuleInterop": true
     },
     "include": [
         "src"
