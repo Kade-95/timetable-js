@@ -6,5 +6,6 @@ export interface ITimetable {
     periods: TimetablePeriod[];
     breakPeriods: number[];
     groups: TimetableGroup[];
-    type: 'single' | 'multiple'
+    assigned: boolean;
+    multiple: boolean;
 }

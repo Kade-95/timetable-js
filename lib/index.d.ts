@@ -1,3 +1,4 @@
 import { ITimetable } from "./models/timetable.interface";
 import { TimetableManager } from "./utils/timetable.manager";
-export { TimetableManager, ITimetable };
+import { IGroup } from './models/group.interface';
+export { TimetableManager, ITimetable, IGroup };

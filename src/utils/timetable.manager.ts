@@ -14,6 +14,14 @@ export class TimetableManager {
         return this.data.groups.map(g => g.slots);
     }
 
+    getAssignees(groups: IGroup[]) {
+        const assignees = groups.reduce((acc: string[], reducer) => {
+            return [...acc, ...reducer.items.map(r => r.assignee)]
+        }, []);
+
+        return Array.from(new Set(assignees));
+    }
+
     getMissingItems(groups: IGroup[]) {
         const allMissing: { _id: string, missing: string[] }[] = [];
         for (let group of groups) {
@@ -135,6 +143,26 @@ export class TimetableManager {
         return assignees;
     }
 
+    getAssignedSlotAssignees(day: string, period: string, groups: IGroup[]) {
+        const assignees: { _id: string, assignee: string | null, section: string, item: string | null }[] = [];
+
+        for (let g of groups) {
+            const slots = this.getGroupSlots(g._id);
+
+            for (let d in slots) {
+                for (let p in slots[d]) {
+                    if (d == day && p == period) {
+                        const item = slots[d][p];
+                        const assignee = (this.data.groups.find(ag => ag._id == g._id)?.assignees as (string | null)[][])[d][p];
+                        assignees.push({ _id: g._id, assignee, section: g.section, item });
+                    }
+                }
+            }
+        }
+
+        return assignees;
+    }
+
     getGroupSlotAssignee(day: string, period: string, group: IGroup) {
         const slots = this.getGroupSlots(group._id);
 
@@ -236,7 +264,7 @@ export class TimetableManager {
     getConflicts(groups: IGroup[]) {
         const conflicts: { _id: string, conflicts: TimetableConflict[] }[] = [];
         const assigned: { item: string, assignee: string, section: string }[] = [];
-
+        
         for (let group of groups) {
             const slots = this.getGroupSlots(group._id);
             const groupConflicts: TimetableConflict[] = [];
@@ -244,7 +272,7 @@ export class TimetableManager {
             for (let day in slots) {
                 for (let period in slots[day]) {
                     const item = this.getGroupSlotItem(day, period, group._id);
-                    const assignee = this.getGroupSlotAssignee(day, period, group);
+                    const assignee = this.data.assigned ? this.data.groups.find(g => g._id == group._id)?.assignees[day][period] : this.getGroupSlotAssignee(day, period, group);
 
                     if (!item) continue;
                     if (!assignee) continue;
@@ -320,7 +348,7 @@ export class TimetableManager {
     }
 
     clone() {
-        const data: ITimetable = { days: this.data.days, periods: this.data.periods, groups: this.data.groups, breakPeriods: this.data.breakPeriods, type: this.data.type };
+        const data: ITimetable = { ...this.data };
         const timeTable = JSON.parse(JSON.stringify(data)) as ITimetable;
         return timeTable;
     }
@@ -353,42 +381,31 @@ export class TimetableManager {
         return timetable;
     }
 
-    automate(groups: IGroup[], random = true) {
+    automate(groups: IGroup[]) {
         const data = this.clone();
-        const timetable = new TimetableManager(data);
+        const timetable = new TimetableManager({ ...data, assigned: false, multiple: false });
 
         timetable.data.groups = [];
         for (let group of groups) {
             const itemsAsList = group.items.map(i => i._id);
             const used: string[] = [];
 
-            const g: TimetableGroup = { _id: group._id, slots: [] };
+            const g: TimetableGroup = { _id: group._id, slots: [], assignees: [] };
 
             for (let d in timetable.data.days) {
                 g.slots[d] = [];
 
                 for (let p in timetable.data.periods) {
                     if (used.length == itemsAsList.length) break;
-                    if (!random) {
-                        const item = itemsAsList.pop();
+                    while (!g.slots[d][p]) {
+                        let n = Math.floor(Math.random() * itemsAsList.length);
+                        let item = itemsAsList[n];
 
-                        if (item) {
+                        if (!used.includes(item)) {
                             g.slots[d][p] = item;
                             used.push(item);
                         }
-                    }
-                    else {
-
-                        while (!g.slots[d][p]) {
-                            let n = Math.floor(Math.random() * itemsAsList.length);
-                            let item = itemsAsList[n];
-
-                            if (!used.includes(item)) {
-                                g.slots[d][p] = item;
-                                used.push(item);
-                            }
-                            n = n == itemsAsList.length - 1 ? 0 : n + 1;
-                        }
+                        n = n == itemsAsList.length - 1 ? 0 : n + 1;
                     }
                 }
             }
@@ -398,9 +415,11 @@ export class TimetableManager {
         return timetable;
     }
 
-    automateMultiple(groups: IGroup[]) {
+    automate_assigne(groups: IGroup[]) {
         const data = this.clone();
-        const timetable = new TimetableManager(data);
+        const timetable = new TimetableManager({ ...data, assigned: true, multiple: false });
+
+        const allAssignees = this.getAssignees(groups);
 
         //truncate groups
         timetable.data.groups = [];
@@ -414,7 +433,95 @@ export class TimetableManager {
             // get a set of all assigned in group
             const groupAssignees = Array.from(new Set(group.items.map(it => it.assignee)));
 
-            const newGroup: TimetableGroup = { _id: group._id, slots: [] };
+            const newGroup: TimetableGroup = { _id: group._id, slots: [], assignees: [] };
+            // used to store assigned items
+            let assignedItems: string[] = [];
+
+            // store checked items to know when all items have been checked
+            let checkedItems: string[] = [];
+
+            for (let d in timetable.data.days) {
+                newGroup.slots[d] = [];
+                newGroup.assignees[d] = [];
+                // store checked assignees to know when all assignees have been checked and escape infinite loop
+                const checkAssignees: string[] = [];
+
+                for (let p in timetable.data.periods) {
+
+                    // get all assigned to this particular slot
+                    const assignees = timetable.getAssignedSlotAssignees(d, p, groups);
+
+                    let item: string;
+                    let assignee: string = allAssignees.find(a => assignees.find(ass => ass.assignee == a))
+                        || assignees.find(ass => ass.section == group.section)?.assignee as string;
+
+                    newGroup.slots[d][p] = null;
+                    newGroup.assignees[d][p] = null;
+                    // till assigned
+                    while (!newGroup.slots[d][p]) {
+
+                        // truncate assignedItems if all items have been assigned to make sure no item has more heirachy
+                        if (assignedItems.length == itemsAsList.length) assignedItems = [];
+
+                        // escape loop if nobody can be assigned to this slot
+                        if (groupAssignees.length == checkAssignees.length) break;
+
+                        // generate a random point in the items list
+                        let n = Math.floor(Math.random() * itemsAsList.length);
+
+                        item = itemsAsList[n];
+                        assignee = group.items.find(i => i._id == item)?.assignee as string;
+
+                        if (!checkedItems.includes(item)) checkedItems.push(item);
+
+                        // who was assigned to this slot?
+                        const usedSlot = assignees.find(a => a.assignee == assignee);
+
+                        // is slot free?
+                        if (!usedSlot) {
+                            // run again if item has been assigned in a round 
+                            if (assignedItems.includes(item) && checkedItems.length != itemsAsList.length) continue;
+
+                            newGroup.slots[d][p] = item;
+                            newGroup.assignees[d][p] = item;
+                            if (!assignedItems.includes(item)) assignedItems.push(item);
+                        }
+
+                        // slot is used and 
+                        // the item is the same with the slot item and 
+                        // the groups are in the same section
+                        else if (usedSlot.section == group.section && usedSlot.item == item) {
+                            newGroup.slots[d][p] = item;
+                            newGroup.assignees[d][p] = item;
+                            if (!assignedItems.includes(item)) assignedItems.push(item);
+                        }
+
+                        if (!checkAssignees.includes(assignee)) checkAssignees.push(assignee);
+                    }
+                }
+            }
+            timetable.data.groups.push(newGroup);
+        }
+        return timetable;
+    }
+
+    automateMultiple(groups: IGroup[]) {
+        const data = this.clone();
+        const timetable = new TimetableManager({ ...data, assigned: false, multiple: true });
+
+        //truncate groups
+        timetable.data.groups = [];
+
+        for (let i = 0; i < groups.length; i++) {
+            const group = groups[i];
+
+            // turn group items into a flat list
+            const itemsAsList = group.items.map(i => i._id);
+
+            // get a set of all assigned in group
+            const groupAssignees = Array.from(new Set(group.items.map(it => it.assignee)));
+
+            const newGroup: TimetableGroup = { _id: group._id, slots: [], assignees: [] };
 
             // used to store assigned items
             let assignedItems: string[] = [];
