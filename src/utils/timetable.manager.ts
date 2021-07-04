@@ -264,7 +264,7 @@ export class TimetableManager {
     getConflicts(groups: IGroup[]) {
         const conflicts: { _id: string, conflicts: TimetableConflict[] }[] = [];
         const assigned: { item: string, assignee: string, section: string }[] = [];
-        
+
         for (let group of groups) {
             const slots = this.getGroupSlots(group._id);
             const groupConflicts: TimetableConflict[] = [];
@@ -600,6 +600,25 @@ export class TimetableManager {
 
         const assigned = assignees.find(a => a.assignee == assignee);
         return !(assigned && assigned.section != group.section);
+    }
+
+    itemAssignmentConflicts(item: string, assignee: string, groupId: string, groups: IGroup[]) {
+        const group = this.getGroup(groupId);
+        const igroup = groups.find(g => g._id == groupId);
+        const itemSlots = this.getItemSlots(item);
+        const assigneeSlots = this.getAssigneeSlots(assignee, groups);
+        const conflicts: any[] = [];
+
+        for (let i of itemSlots) {
+            for (let a of assigneeSlots) {
+                if (i.day == a.day && i.period == a.period) {
+                    const ag = groups.find(g => g._id == a._id);
+                    if (ag?.section != igroup?.section) conflicts.push({ item: (group?.slots as any)[a.day][a.period] as string, day: a.day, period: a.period, _id: ag?._id as string })
+                }
+            }
+        }
+
+        return conflicts;
     }
 
     groupSections(groups: IGroup[]) {

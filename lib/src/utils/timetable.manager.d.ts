@@ -100,6 +100,7 @@ export declare class TimetableManager {
     automate_assigne(groups: IGroup[]): TimetableManager;
     automateMultiple(groups: IGroup[]): TimetableManager;
     canAssignToSlot(item: string, groupId: string, day: string, period: string, groups: IGroup[]): boolean;
+    itemAssignmentConflicts(item: string, assignee: string, groupId: string, groups: IGroup[]): any[];
     groupSections(groups: IGroup[]): IGroup[][];
     assignedToSameInSection(groups: IGroup[]): any;
     used(groups: IGroup[]): string;

@@ -10,18 +10,25 @@ const t = new TimetableManager({ ...singleTimetable });
 // const items = cgroup.items.map(t => t._id);
 // const r = t.getGroupConflict('608e73327568794f9448e263', Groups)
 
-const a = t.automate_assigne(Groups);
-const au = a.used(Groups);
+// const a = t.automate_assigne(Groups);
+// const au = a.used(Groups);
 
-console.log(au, a.hasIssues(Groups));
+// console.log(au, a.hasIssues(Groups));
 // console.log(au, a.hasIssues(Groups), a.data.groups);
 
-// (window as any).groups = Groups;
+(window as any).groups = Groups;
 // (window as any).timetable = t;
 
 
-// group 608e73327568794f9448e263
+const groupId =  '608e73327568794f9448e263'
 
-// item 608e73337568794f9448e27f
+const item = '608e73337568794f9448e27f'
 
-// assignee d31b7699-b009-49cc-a4aa-ffcefcc9cd64
+const assignee = 'd31b7699-b009-49cc-a4aa-ffcefcc9cd64'
+
+const n = t.itemAssignmentConflicts(item, assignee, groupId, Groups)
+console.log(n);
+
+console.log(t.data.groups);
+
+console.log(Groups)
