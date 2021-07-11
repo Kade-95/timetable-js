@@ -1,4 +1,8 @@
+export interface Time {
+    hour: number;
+    minute: number;
+}
 export interface TimetablePeriod {
-    start: Date;
-    end: Date;
+    start: Time;
+    end: Time;
 }

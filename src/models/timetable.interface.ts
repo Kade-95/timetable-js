@@ -4,7 +4,7 @@ import { TimetablePeriod } from "./timetable.period";
 export interface ITimetable {
     days: string[];
     periods: TimetablePeriod[];
-    breakPeriods: number[];
+    breakPeriods: TimetablePeriod[];
     groups: TimetableGroup[];
     assigned: boolean;
     multiple: boolean;
