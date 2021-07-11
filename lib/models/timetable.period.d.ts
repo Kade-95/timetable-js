@@ -1,4 +1,4 @@
 export interface TimetablePeriod {
-    start: string;
-    end: string;
+    start: Date;
+    end: Date;
 }
