@@ -1,9 +1,9 @@
 import { ITimetable } from "./models/timetable.interface";
-import { TimetableManager } from "./utils/timetable.manager";
+import { Timetable } from "./utils/timetable";
 import { IGroup } from './models/group.interface'
 
 export {
-    TimetableManager,
+    Timetable,
     ITimetable,
     IGroup
 }

@@ -4,7 +4,7 @@ import { TimetableGroup } from "../models/timetable.group";
 import { ITimetable } from "../models/timetable.interface";
 import { TimetableSlot } from "../models/timetable.slot";
 
-export class TimetableManager {
+export class Timetable {
 
     constructor(
         public data: ITimetable
@@ -359,7 +359,7 @@ export class TimetableManager {
 
         if (!group) throw new Error('Group not found');
 
-        const timetable = new TimetableManager(data);
+        const timetable = new Timetable(data);
 
         if (timetable.getGroupInvalidItems(_id, group.items.map(i => i._id)))
             throw new Error("This item should not be assigned to this group");
@@ -383,7 +383,7 @@ export class TimetableManager {
 
     automate(groups: IGroup[]) {
         const data = this.clone();
-        const timetable = new TimetableManager({ ...data, assigned: false, multiple: false });
+        const timetable = new Timetable({ ...data, assigned: false, multiple: false });
 
         timetable.data.groups = [];
         for (let group of groups) {
@@ -417,7 +417,7 @@ export class TimetableManager {
 
     automate_assigne(groups: IGroup[]) {
         const data = this.clone();
-        const timetable = new TimetableManager({ ...data, assigned: true, multiple: false });
+        const timetable = new Timetable({ ...data, assigned: true, multiple: false });
 
         const allAssignees = this.getAssignees(groups);
 
@@ -507,7 +507,7 @@ export class TimetableManager {
 
     automateMultiple(groups: IGroup[]) {
         const data = this.clone();
-        const timetable = new TimetableManager({ ...data, assigned: false, multiple: true });
+        const timetable = new Timetable({ ...data, assigned: false, multiple: true });
 
         //truncate groups
         timetable.data.groups = [];

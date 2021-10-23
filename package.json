@@ -1,7 +1,6 @@
 {
-  "name": "timetable-manager",
-  "version": "1.0.9",
-  "description": "",
+  "name": "timetable",
+  "version": "0.0.1",
   "main": "lib/index.js",
   "scripts": {
     "start": "npm run build && npm-run-all --parallel watch serve",
@@ -28,5 +27,17 @@
   "dependencies": {
     "axios": "^0.21.1",
     "uuid": "^8.3.2"
-  }
+  },
+  "directories": {
+    "lib": "lib"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Kade-95/timetable-js.git"
+  },
+  "bugs": {
+    "url": "https://github.com/Kade-95/timetable-js/issues"
+  },
+  "homepage": "https://github.com/Kade-95/timetable-js#readme",
+  "description": ""
 }
